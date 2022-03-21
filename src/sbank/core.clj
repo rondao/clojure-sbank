@@ -17,11 +17,10 @@
 
 (def bank-conn (d/connect bank-client {:db-name "bank"}))
 
-(defn make-json-parser
-  []
-  (fn [json-str]
-    (try (json/read-str json-str :key-fn keyword)
-         (catch Exception e {}))))
+(defn json-parser
+  [json-str]
+  (try (json/read-str json-str :key-fn keyword)
+       (catch Exception e {})))
 
 (defn -operate-bank-amount!
   [operation order]
@@ -75,8 +74,8 @@
 
 (defn serve-deposit-service
   []
-  (Http/serve ":20000" (make-deposit-service (make-json-parser))))
+  (Http/serve ":20000" (make-deposit-service json-parser)))
 
 (defn serve-withdraw-service
   []
-  (Http/serve ":20001" (make-withdrawn-service (make-json-parser))))
+  (Http/serve ":20001" (make-withdrawn-service json-parser)))
