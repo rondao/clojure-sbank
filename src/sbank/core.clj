@@ -9,8 +9,9 @@
 (s/def :bank/account pos-int?)
 (s/def :bank/amount pos-int?)
 
-(s/def :bank/deposit (s/keys :req [:bank/account :bank/amount]))
-(s/def :bank/withdrawn (s/keys :req [:bank/account :bank/amount]))
+(s/def :bank/data (s/keys :req [:bank/account :bank/amount]))
+(s/def :bank/deposit :bank/data)
+(s/def :bank/withdrawn :bank/data)
 
 (def bank-client (d/client {:server-type :dev-local
                              :system "dev"}))
@@ -22,20 +23,29 @@
   (try (json/read-str json-str :key-fn keyword)
        (catch Exception e {})))
 
+(defn bank-read-account
+  [account]
+  (d/pull
+   (d/db bank-conn)
+   [:bank/amount]
+   [:bank/account account]))
+
+(defn -bank-transfer-data!
+  [data]
+  (d/transact bank-conn
+              {:tx-data [data]}))
+
 (defn -operate-bank-amount!
   [operation order]
   (let [{account :bank/account
          amount :bank/amount} order
-        cur-amount (d/pull
-                    (d/db bank-conn)
-                    [:bank/amount]
-                    [:bank/account account])
+        cur-amount (bank-read-account account)
         new-amount (operation
                     (:bank/amount cur-amount)
                     amount)]
-    (d/transact bank-conn
-                {:tx-data [{:bank/account account
-                            :bank/amount new-amount}]})
+    (-bank-transfer-data!
+     {:bank/account account
+      :bank/amount new-amount})
     new-amount))
 
 (def bank-deposit!

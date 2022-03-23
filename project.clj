@@ -6,6 +6,7 @@
   :java-source-paths ["src/java"]
   :dependencies [[org.clojure/clojure "1.10.3"]
                  [org.clojure/data.json "2.4.0"]
+                 [org.clojure/test.check "0.9.0"]
                  [com.datomic/dev-local "1.0.242"]
                  [com.twitter/finagle-http_2.13 "22.2.0"]]
   :repositories [["cognitect-dev-tools" {:url      "https://dev-tools.cognitect.com/maven/releases/"
