@@ -1,41 +1,10 @@
 (ns sbank.db
   (:import  [java.time Duration]
-            [org.apache.kafka.clients.consumer ConsumerConfig KafkaConsumer]
-            [org.apache.kafka.clients.producer ProducerConfig ProducerRecord KafkaProducer])
-  (:require [clojure.data.json :as json]
+            [org.apache.kafka.clients.consumer KafkaConsumer]
+            [org.apache.kafka.clients.producer ProducerRecord])
+  (:require [sbank.core :as core]
             [clojure.spec.alpha :as s]
             [datomic.client.api :as d]))
-
-(s/def :bank/account pos-int?)
-(s/def :bank/amount pos-int?)
-
-(s/def :bank/data (s/keys :req [:bank/account :bank/amount]))
-(s/def :bank/deposit :bank/data)
-(s/def :bank/withdrawn :bank/data)
-(s/def :bank/statement :bank/account)
-
-(def consumer-properties
-  {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG "localhost:9092"
-   ConsumerConfig/GROUP_ID_CONFIG "bank"
-   ConsumerConfig/KEY_DESERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringDeserializer"
-   ConsumerConfig/VALUE_DESERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringDeserializer"})
-
-(def producer-properties
-  {ProducerConfig/BOOTSTRAP_SERVERS_CONFIG "localhost:9092"
-   ProducerConfig/KEY_SERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringSerializer"
-   ProducerConfig/VALUE_SERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringSerializer"})
-
-(def producer
-  (KafkaProducer. producer-properties))
-
-(defn json-parser
-  [json-str]
-  (try (json/read-str json-str :key-fn keyword)
-       (catch Exception e {})))
-
-(defn json-serialize
-  [json-str]
-  (json/write-str json-str :key-fn #(subs (str %) 1)))
 
 (def bank-client (d/client {:server-type :dev-local
                              :system "dev"}))
@@ -78,15 +47,15 @@
   (let [account statement-order
         value (bank-read-account account)]
     (println "Send" account " " value)
-    (.send producer (ProducerRecord. "read-statement" (str account) (json-serialize value)))))
+    (.send core/producer (ProducerRecord. "read-statement" (str account) (core/json-serialize value)))))
 
 (defn extract-value-and-topic [record]
-  (list (json-parser
+  (list (core/json-parser
          (.value record))
         (.topic record)))
 
 (defn consumer! []
-  (with-open [consumer (KafkaConsumer. consumer-properties)]
+  (with-open [consumer (KafkaConsumer. core/consumer-properties)]
     (.subscribe consumer ["db-deposit" "db-withdrawn" "db-statement"])
     (loop [records []]
       (doseq [[value topic] (map extract-value-and-topic records)]

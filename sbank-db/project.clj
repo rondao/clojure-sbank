@@ -5,7 +5,8 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :main sbank.db
   :java-source-paths ["src/java"]
-  :dependencies [[org.clojure/clojure "1.10.3"]
+  :dependencies [[sbank-core "0.1.0-SNAPSHOT"]
+                 [org.clojure/clojure "1.10.3"]
                  [org.clojure/data.json "2.4.0"]
                  [org.clojure/test.check "0.9.0"]
                  [org.apache.kafka/kafka-clients "3.1.0"]
