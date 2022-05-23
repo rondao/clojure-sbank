@@ -12,7 +12,7 @@
     (loop [records []]
       (doseq [value (map #(core/json-parser (.value %)) records)]
         (println "Value" value)
-        (when (s/valid? :bank/withdrawn value)
+        (when (s/valid? :bank/deposit value)
           (.send core/producer (ProducerRecord. "db-deposit" (core/json-serialize value)))))
       (recur (seq (.poll consumer (Duration/ofSeconds 1)))))))
 
