@@ -1,9 +1,10 @@
-(ns sbank.core-test
+(ns sbank-db.db-test
+  #_{:clj-kondo/ignore [:refer-all]}
   (:require [clojure.test :refer :all]
             [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
             [datomic.client.api :as d]
-            [sbank.core :refer :all]))
+            [sbank.db :refer :all]))
 
 (def mock-bank (atom {}))
 
