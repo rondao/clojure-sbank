@@ -1,6 +1,7 @@
 (ns sbank.core
-  (:import [org.apache.kafka.clients.consumer ConsumerConfig]
-           [org.apache.kafka.clients.producer ProducerConfig KafkaProducer])
+  (:import [java.time Duration]
+           [org.apache.kafka.clients.consumer ConsumerConfig KafkaConsumer]
+           [org.apache.kafka.clients.producer ProducerConfig KafkaProducer ProducerRecord])
   (:require [clojure.data.json :as json]
             [clojure.spec.alpha :as s]))
 
@@ -34,3 +35,14 @@
 (defn json-serialize
   [json-str]
   (json/write-str json-str :key-fn #(subs (str %) 1)))
+
+(defn consumer! [incoming-topic db-topic data-spec]
+  (with-open [consumer (KafkaConsumer. consumer-properties)]
+    (println "Subscribing to topic: " incoming-topic)
+    (.subscribe consumer [incoming-topic])
+    (loop [records []]
+      (doseq [value (map #(json-parser (.value %)) records)]
+        (println "Value" value)
+        (when (s/valid? data-spec value)
+          (.send producer (ProducerRecord. db-topic (json-serialize value)))))
+      (recur (seq (.poll consumer (Duration/ofSeconds 1)))))))
