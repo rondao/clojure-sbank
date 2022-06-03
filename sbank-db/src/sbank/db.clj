@@ -9,6 +9,8 @@
 (def bank-client (d/client {:server-type :dev-local
                              :system "dev"}))
 
+(d/create-database bank-client {:db-name "bank"})
+
 (def bank-conn (d/connect bank-client {:db-name "bank"}))
 
 (defn bank-read-account
