@@ -15,9 +15,10 @@
       (with-open [consumer (KafkaConsumer. core/consumer-properties)]
         (.subscribe consumer ["read-statement"])
         (let [response (Response/apply)
-              statement-order (data-parser (.getContentString request))]
+              statement-order (data-parser (.getContentString request))
+              producer (core/create-producer)]
           (println "Statement Order" statement-order)
-          (.send core/producer (ProducerRecord. "bank-statement" (core/json-serialize statement-order)))
+          (.send producer (ProducerRecord. "bank-statement" (core/json-serialize statement-order)))
           (let [statement-value (loop [records []]
                                   (let [record (filter #(= (str statement-order) (.key %)) records)]
                                     (println record)
@@ -35,13 +36,14 @@
   (proxy [Service] []
     (apply [request]
       (let [response (Response/apply)
-            deposit-order (data-parser (.getContentString request))]
+            deposit-order (data-parser (.getContentString request))
+            producer (core/create-producer)]
         (println "Deposit Order" deposit-order)
         (.setContentString
          response
          (if (s/valid? :bank/deposit deposit-order)
            (format "Success Deposit! New value %s."
-                   (.send core/producer (ProducerRecord. "bank-deposit" (core/json-serialize deposit-order))))
+                   (.send producer (ProducerRecord. "bank-deposit" (core/json-serialize deposit-order))))
            "Failed! Bad Request."))
         (Future/value response)))))
 
@@ -50,14 +52,15 @@
   (proxy [Service] []
     (apply [request]
       (let [response (Response/apply)
-            withdrawn-order (data-parser (.getContentString request))]
+            withdrawn-order (data-parser (.getContentString request))
+            producer (core/create-producer)]
         (println "Withdrawn Order" withdrawn-order)
         (println "Withdrawn Order STR" (core/json-serialize withdrawn-order))
         (.setContentString
          response
          (if (s/valid? :bank/withdrawn withdrawn-order)
            (format "Success Withdrawn! New value %s."
-                   (.send core/producer (ProducerRecord. "bank-withdrawn" (core/json-serialize withdrawn-order))))
+                   (.send producer (ProducerRecord. "bank-withdrawn" (core/json-serialize withdrawn-order))))
            "Failed! Bad Request."))
         (Future/value response)))))
 

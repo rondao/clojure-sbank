@@ -14,17 +14,17 @@
 (s/def :bank/statement :bank/account)
 
 (def consumer-properties
-  {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG "localhost:9092"
+  {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG "kafka:9092"
    ConsumerConfig/GROUP_ID_CONFIG "bank"
    ConsumerConfig/KEY_DESERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringDeserializer"
    ConsumerConfig/VALUE_DESERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringDeserializer"})
 
 (def producer-properties
-  {ProducerConfig/BOOTSTRAP_SERVERS_CONFIG "localhost:9092"
+  {ProducerConfig/BOOTSTRAP_SERVERS_CONFIG "kafka:9092"
    ProducerConfig/KEY_SERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringSerializer"
    ProducerConfig/VALUE_SERIALIZER_CLASS_CONFIG "org.apache.kafka.common.serialization.StringSerializer"})
 
-(def producer
+(defn create-producer []
   (KafkaProducer. producer-properties))
 
 (defn json-parser
@@ -40,9 +40,10 @@
   (with-open [consumer (KafkaConsumer. consumer-properties)]
     (println "Subscribing to topic: " incoming-topic)
     (.subscribe consumer [incoming-topic])
-    (loop [records []]
-      (doseq [value (map #(json-parser (.value %)) records)]
-        (println "Value" value)
-        (when (s/valid? data-spec value)
-          (.send producer (ProducerRecord. db-topic (json-serialize value)))))
-      (recur (seq (.poll consumer (Duration/ofSeconds 1)))))))
+    (let [producer (create-producer)]
+      (loop [records []]
+        (doseq [value (map #(json-parser (.value %)) records)]
+          (println "Value" value)
+          (when (s/valid? data-spec value)
+            (.send producer (ProducerRecord. db-topic (json-serialize value)))))
+        (recur (seq (.poll consumer (Duration/ofSeconds 1))))))))
