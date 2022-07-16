@@ -43,7 +43,7 @@
         (.setContentString
          response
          (if (s/valid? :bank/deposit deposit-order)
-           (format "Success Deposit! New value %s."
+           (format "Success Deposit! %s"
                    (.send producer (ProducerRecord. "bank-deposit" (core/json-serialize deposit-order))))
            "Failed! Bad Request."))
         (Future/value response)))))
@@ -56,11 +56,10 @@
             withdrawn-order (data-parser (.getContentString request))
             producer (core/create-producer)]
         (println "Withdrawn Order" withdrawn-order)
-        (println "Withdrawn Order STR" (core/json-serialize withdrawn-order))
         (.setContentString
          response
          (if (s/valid? :bank/withdrawn withdrawn-order)
-           (format "Success Withdrawn! New value %s."
+           (format "Success Withdrawn! %s"
                    (.send producer (ProducerRecord. "bank-withdrawn" (core/json-serialize withdrawn-order))))
            "Failed! Bad Request."))
         (Future/value response)))))
