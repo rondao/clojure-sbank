@@ -19,12 +19,13 @@
               producer (core/create-producer)]
           (println "Statement Order" statement-order)
           (.send producer (ProducerRecord. "bank-statement" (core/json-serialize statement-order)))
-          (let [statement-value (loop [records []]
-                                  (let [record (filter #(= (str statement-order) (.key %)) records)]
-                                    (println record)
-                                    (if (empty? record)
-                                      (recur (seq (.poll consumer (Duration/ofSeconds 1))))
-                                      (data-parser (.value (first record))))))]
+          (let [statement-value
+                (loop [records (seq (.poll consumer (Duration/ofSeconds 1)))]
+                  (let [record (filter #(= (str statement-order) (.key %)) records)]
+                    (println record)
+                    (if (empty? record)
+                      (recur (seq (.poll consumer (Duration/ofSeconds 1))))
+                      (data-parser (.value (first record))))))]
             (.setContentString
              response
              (str "Statement: " statement-value))
